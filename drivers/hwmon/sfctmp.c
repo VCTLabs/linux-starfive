@@ -58,7 +58,7 @@ struct sfc_temp{
 	int clk;
 };
 
-static ssize_t sfctmp_get_temp(struct device *dev, struct device_attribute *devattr, char *buf)
+static ssize_t sfctmp_get_temp(struct device *dev, struct device_attribute *devattr,char *buf)
 {
 	long temp;
 	const long Y100 = 23750, K100 = 8110, Z100 = 409400;
@@ -70,6 +70,13 @@ static ssize_t sfctmp_get_temp(struct device *dev, struct device_attribute *deva
 }
 
 static SENSOR_DEVICE_ATTR(temp1_input, S_IRUGO, sfctmp_get_temp, NULL, 0);
+
+static struct attribute *sfc_attrs[] = {
+	&sensor_dev_attr_temp1_input.dev_attr.attr,
+	NULL
+};
+
+ATTRIBUTE_GROUPS(sfc);
 
 static ssize_t sfctmp_temp_show(void)
 {
@@ -171,11 +178,9 @@ static int sfc_temp_probe(struct platform_device *pdev)
 	temp_sensor_power_up(sfc_temp);
 	sfctmp_temp_show();
 
-	ret = device_create_file(temp_dev, &sensor_dev_attr_temp1_input.dev_attr);
-	if (ret){
-		return ret;
-	}
-	hwmon_device_register(temp_dev);
+	hwmon_dev = devm_hwmon_device_register_with_groups(temp_dev,
+									"sfc", sfc_temp, sfc_groups);
+
 	return PTR_ERR_OR_ZERO(hwmon_dev);
 }
 
